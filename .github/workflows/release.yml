@@ -17,6 +17,7 @@ jobs:
   release:
     name: Build and publish signed APK
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,11 +46,16 @@ jobs:
           gradle-version: ${{ env.GRADLE_VERSION }}
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
 
       - name: Install Android platform packages
         run: |
-          sdkmanager --install "platforms;${ANDROID_PLATFORM}" "build-tools;${ANDROID_BUILD_TOOLS}" "platform-tools"
+          sdkmanager --install \
+            "platforms;${ANDROID_PLATFORM}" \
+            "build-tools;${ANDROID_BUILD_TOOLS}" \
+            "platform-tools"
 
       - name: Decode signing key
         env:
@@ -65,11 +71,17 @@ jobs:
           VELTRIX_KEY_PASSWORD: ${{ secrets.VELTRIX_KEY_PASSWORD }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          if [[ "$VERSION" == "$GITHUB_REF_NAME" ]]; then VERSION="1.0.${GITHUB_RUN_NUMBER}"; fi
+
+          if [[ "$VERSION" == "$GITHUB_REF_NAME" ]]; then
+            VERSION="1.0.${GITHUB_RUN_NUMBER}"
+          fi
+
           gradle --no-daemon --stacktrace assembleRelease \
             -PAPP_VERSION="$VERSION" \
             -PAPP_VERSION_CODE="$GITHUB_RUN_NUMBER"
-          cp app/build/outputs/apk/release/app-release.apk "VELTRIX-${VERSION}.apk"
+
+          cp app/build/outputs/apk/release/app-release.apk \
+            "VELTRIX-${VERSION}.apk"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
