@@ -1,3 +1,4 @@
+
 name: VELTRIX Android CI
 
 on:
@@ -11,8 +12,8 @@ permissions:
 
 env:
   GRADLE_VERSION: '9.3.1'
-  ANDROID_PLATFORM: 'android-37'
-  ANDROID_BUILD_TOOLS: '36.0.0'
+  ANDROID_PLATFORM: 'android-37.0'
+  ANDROID_BUILD_TOOLS: '37.0.0'
 
 jobs:
   debug-apk:
@@ -39,12 +40,24 @@ jobs:
         with:
           packages: 'platform-tools'
 
-      - name: Install Android platform packages
+      - name: Install Android SDK packages
         run: |
           sdkmanager --install \
             "platforms;${ANDROID_PLATFORM}" \
             "build-tools;${ANDROID_BUILD_TOOLS}" \
             "platform-tools"
+
+      - name: Create Android 37 compatibility alias
+        run: |
+          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          if [ -d "$SDK/platforms/android-37.0" ] && [ ! -e "$SDK/platforms/android-37" ]; then
+            ln -s android-37.0 "$SDK/platforms/android-37"
+          fi
+
+      - name: Verify Android SDK
+        run: |
+          test -f "$ANDROID_HOME/platforms/android-37/android.jar"
+          echo "Android SDK 37 is ready."
 
       - name: Run tests and build APK
         run: |
