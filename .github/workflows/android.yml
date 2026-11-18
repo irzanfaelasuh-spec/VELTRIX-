@@ -10,8 +10,8 @@ permissions:
   contents: read
 
 env:
-  GRADLE_VERSION: '8.13'
-  ANDROID_PLATFORM: 'android-36'
+  GRADLE_VERSION: '9.3.1'
+  ANDROID_PLATFORM: 'android-37'
   ANDROID_BUILD_TOOLS: '36.0.0'
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Gradle 8.13
+      - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
@@ -46,8 +46,9 @@ jobs:
             "build-tools;${ANDROID_BUILD_TOOLS}" \
             "platform-tools"
 
-      - name: Run unit tests and build APK
-        run: gradle --no-daemon --stacktrace testDebugUnitTest assembleDebug
+      - name: Run tests and build APK
+        run: |
+          gradle --no-daemon --stacktrace testDebugUnitTest assembleDebug
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
