@@ -18,6 +18,7 @@ jobs:
   debug-apk:
     name: Build debug APK
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,11 +35,16 @@ jobs:
           gradle-version: ${{ env.GRADLE_VERSION }}
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
 
       - name: Install Android platform packages
         run: |
-          sdkmanager --install "platforms;${ANDROID_PLATFORM}" "build-tools;${ANDROID_BUILD_TOOLS}" "platform-tools"
+          sdkmanager --install \
+            "platforms;${ANDROID_PLATFORM}" \
+            "build-tools;${ANDROID_BUILD_TOOLS}" \
+            "platform-tools"
 
       - name: Run unit tests and build APK
         run: gradle --no-daemon --stacktrace testDebugUnitTest assembleDebug
