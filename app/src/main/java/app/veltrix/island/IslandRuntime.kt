@@ -27,13 +27,30 @@ object IslandRuntime {
     private val mutable = MutableStateFlow(IslandUiState())
     val state = mutable.asStateFlow()
 
-    @Volatile var activeController: MediaController? = null
+    @Volatile
+    var activeController: MediaController? = null
 
-    fun updateMedia(title: String?, artist: String?, playing: Boolean, positionMs: Long, speed: Float, controller: MediaController?) {
+    fun updateMedia(
+        title: String?,
+        artist: String?,
+        playing: Boolean,
+        positionMs: Long,
+        speed: Float,
+        controller: MediaController?
+    ) {
         activeController = controller
+
         mutable.value = mutable.value.copy(
-            mediaTitle = if (controller == null) "Nothing playing" else title?.takeIf { it.isNotBlank() } ?: "Unknown track",
-            mediaArtist = if (controller == null) "Start music on your device" else artist?.takeIf { it.isNotBlank() } ?: "Unknown artist",
+            mediaTitle = if (controller == null) {
+                "Nothing playing"
+            } else {
+                title?.takeIf { it.isNotBlank() } ?: "Unknown track"
+            },
+            mediaArtist = if (controller == null) {
+                "Start music on your device"
+            } else {
+                artist?.takeIf { it.isNotBlank() } ?: "Unknown artist"
+            },
             isPlaying = playing,
             mediaPositionMs = positionMs.coerceAtLeast(0L),
             mediaSpeed = speed,
@@ -50,29 +67,71 @@ object IslandRuntime {
     }
 
     fun updateBattery(percent: Int, isCharging: Boolean) {
-        mutable.value = mutable.value.copy(batteryPercent = percent, charging = isCharging)
+        mutable.value = mutable.value.copy(
+            batteryPercent = percent,
+            charging = isCharging
+        )
     }
 
-    fun updateAdhan(prayerName: String, time: String, preAlert: Boolean) {
-        mutable.value = mutable.value.copy(adhanTitle = prayerName, adhanTime = time, adhanIsPreAlert = preAlert, adhanAt = SystemClock.elapsedRealtime())
+    fun updateAdhan(
+        prayerName: String,
+        time: String,
+        preAlert: Boolean
+    ) {
+        mutable.value = mutable.value.copy(
+            adhanTitle = prayerName,
+            adhanTime = time,
+            adhanIsPreAlert = preAlert,
+            adhanAt = SystemClock.elapsedRealtime()
+        )
     }
 
-    fun clearAdhan() { mutable.value = mutable.value.copy(adhanTitle = "", adhanTime = "", adhanIsPreAlert = false, adhanAt = 0L) }
+    fun clearAdhan() {
+        mutable.value = mutable.value.copy(
+            adhanTitle = "",
+            adhanTime = "",
+            adhanIsPreAlert = false,
+            adhanAt = 0L
+        )
+    }
 
     fun currentPosition(): Long {
         val s = mutable.value
-        if (!s.isPlaying || s.mediaSpeed <= 0f || s.mediaPositionUpdatedAt == 0L) return s.mediaPositionMs
-        val delta = SystemClock.elapsedRealtime() - s.mediaPositionUpdatedAt
-        return (s.mediaPositionMs + delta * s.mediaSpeed).coerceAtLeast(0L)
+
+        if (
+            !s.isPlaying ||
+            s.mediaSpeed <= 0f ||
+            s.mediaPositionUpdatedAt == 0L
+        ) {
+            return s.mediaPositionMs
+        }
+
+        val delta =
+            SystemClock.elapsedRealtime() - s.mediaPositionUpdatedAt
+
+        val elapsedMediaTime =
+            (delta.toDouble() * s.mediaSpeed.toDouble()).toLong()
+
+        return (s.mediaPositionMs + elapsedMediaTime)
+            .coerceAtLeast(0L)
     }
 
     fun playPause() {
         val controller = activeController ?: return
         val state = controller.playbackState?.state
-        if (state == android.media.session.PlaybackState.STATE_PLAYING) controller.transportControls.pause()
-        else controller.transportControls.play()
+
+        if (state == android.media.session.PlaybackState.STATE_PLAYING) {
+            controller.transportControls.pause()
+        } else {
+            controller.transportControls.play()
+        }
     }
 
-    fun skipNext() { activeController?.transportControls?.skipToNext() }
-    fun skipPrevious() { activeController?.transportControls?.skipToPrevious() }
+    fun skipNext() {
+        activeController?.transportControls?.skipToNext()
+    }
+
+    fun skipPrevious() {
+        activeController?.transportControls?.skipToPrevious()
+    }
 }
